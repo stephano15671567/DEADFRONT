@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { crearActivo } from '@/services/bovedaService';
 import { AgregarActivoDto, CategoriaActivo } from '@/types/boveda.types';
 
-export default function CrearActivoForm() {
+interface Props {
+  onSuccess?: () => void;
+}
+
+export default function CrearActivoForm({ onSuccess }: Props) {
   const [form, setForm] = useState<AgregarActivoDto>({
     plataforma: '',
     usuarioCuenta: '',
@@ -29,6 +33,9 @@ export default function CrearActivoForm() {
       await crearActivo(form);
       setMensaje({ tipo: 'success', texto: 'Activo guardado correctamente' });
       setForm({ plataforma: '', usuarioCuenta: '', password: '', notas: '', categoria: 'OTRO' });
+      
+      if (onSuccess) onSuccess();
+
     } catch (error) {
       console.error(error);
       setMensaje({ tipo: 'error', texto: 'Error al guardar. Revisa el backend.' });
@@ -38,74 +45,48 @@ export default function CrearActivoForm() {
   };
 
   return (
-    <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 border border-gray-200 text-gray-800">
-      <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">Nuevo Activo</h2>
+    <div className="w-full bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
+      <h2 className="text-2xl font-bold mb-4 text-center text-blue-600">Nuevo Activo</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Plataforma</label>
-          <input
-            name="plataforma"
-            type="text"
-            required
-            placeholder="Netflix, Facebook..."
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-black"
-            value={form.plataforma}
-            onChange={handleChange}
-          />
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Plataforma</label>
+            <input name="plataforma" type="text" required placeholder="Ej: Netflix" className="mt-1 block w-full p-2 border border-gray-300 rounded text-black" value={form.plataforma} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Categoría</label>
+            <select name="categoria" className="mt-1 block w-full p-2 border border-gray-300 rounded text-black" value={form.categoria} onChange={handleChange}>
+              <option value="OTRO">Otro</option>
+              <option value="RED_SOCIAL">Red Social</option>
+              <option value="BANCO">Banco</option>
+              <option value="EMAIL">Email</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Usuario</label>
+            <input name="usuarioCuenta" type="text" required className="mt-1 block w-full p-2 border border-gray-300 rounded text-black" value={form.usuarioCuenta} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input name="password" type="password" required className="mt-1 block w-full p-2 border border-gray-300 rounded text-black" value={form.password} onChange={handleChange} />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Usuario</label>
-          <input
-            name="usuarioCuenta"
-            type="text"
-            required
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-black"
-            value={form.usuarioCuenta}
-            onChange={handleChange}
-          />
+          <label className="block text-sm font-medium text-gray-700">Notas</label>
+          <textarea name="notas" placeholder="Notas..." className="mt-1 block w-full p-2 border border-gray-300 rounded text-black h-20" value={form.notas} onChange={handleChange} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Password</label>
-          <input
-            name="password"
-            type="password"
-            required
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-black"
-            value={form.password}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Categoria</label>
-          <select
-            name="categoria"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-black"
-            value={form.categoria}
-            onChange={handleChange}
-          >
-            <option value="OTRO">Otro</option>
-            <option value="RED_SOCIAL">Red Social</option>
-            <option value="BANCO">Banco</option>
-            <option value="EMAIL">Email</option>
-          </select>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-2 px-4 rounded-md text-white font-bold transition-colors
-            ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}
-          `}
-        >
-          {loading ? 'Guardando...' : 'Guardar'}
+        <button type="submit" disabled={loading} className={`w-full py-2 px-4 rounded font-bold text-white transition ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+          {loading ? 'Guardando...' : 'Guardar Activo'}
         </button>
 
         {mensaje && (
-          <div className={`p-2 text-center rounded ${mensaje.tipo === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`p-2 text-center rounded text-sm ${mensaje.tipo === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             {mensaje.texto}
           </div>
         )}
