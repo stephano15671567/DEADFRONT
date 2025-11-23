@@ -3,16 +3,20 @@
 import { useEffect, useState } from 'react';
 import { obtenerActivos, eliminarActivo } from '@/services/bovedaService';
 import { ActivoDigital } from '@/types/boveda.types';
+import { useAuth } from '@/providers/KeycloakProvider'; // <--- IMPORTAR
 
 interface Props {
   refreshTrigger: number;
 }
 
 export default function ListaActivos({ refreshTrigger }: Props) {
+  const { isLogin, token } = useAuth(); // <--- USAR EL HOOK
   const [activos, setActivos] = useState<ActivoDigital[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const cargarDatos = async () => {
+    if (!isLogin || !token) return; // SI NO HAY LOGIN, NO HACER NADA
+
     setLoading(true);
     try {
       const data = await obtenerActivos();
@@ -24,9 +28,14 @@ export default function ListaActivos({ refreshTrigger }: Props) {
     }
   };
 
+  // Ejecutar cuando cambie el trigger O cuando el usuario se loguee
   useEffect(() => {
-    cargarDatos();
-  }, [refreshTrigger]);
+    if (isLogin) {
+      cargarDatos();
+    } else {
+      setActivos([]); // Limpiar si se desloguea
+    }
+  }, [refreshTrigger, isLogin, token]);
 
   const handleEliminar = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este activo?')) return;
@@ -38,8 +47,17 @@ export default function ListaActivos({ refreshTrigger }: Props) {
     }
   };
 
-  if (loading && activos.length === 0) return <p className="text-center text-gray-500 mt-8">Cargando bóveda...</p>;
-  if (!loading && activos.length === 0) return <p className="text-center text-gray-500 mt-8">La bóveda está vacía. ¡Agrega tu primer activo arriba!</p>;
+  // Renderizado condicional
+  if (!isLogin) {
+    return (
+      <div className="w-full max-w-5xl mt-8 text-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p className="text-gray-500 text-lg">🔒 Inicia sesión para ver tu Bóveda Segura.</p>
+      </div>
+    );
+  }
+
+  if (loading) return <p className="text-center text-gray-500 mt-8">Cargando bóveda...</p>;
+  if (activos.length === 0) return <p className="text-center text-gray-500 mt-8">La bóveda está vacía.</p>;
 
   return (
     <div className="w-full max-w-5xl mt-8">

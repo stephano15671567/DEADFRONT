@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { crearActivo } from '@/services/bovedaService';
 import { AgregarActivoDto, CategoriaActivo } from '@/types/boveda.types';
+import { useAuth } from '@/providers/KeycloakProvider'; // <--- IMPORTAR
 
 interface Props {
   onSuccess?: () => void;
 }
 
 export default function CrearActivoForm({ onSuccess }: Props) {
+  const { isLogin } = useAuth(); // <--- Verificar estado
   const [form, setForm] = useState<AgregarActivoDto>({
     plataforma: '',
     usuarioCuenta: '',
@@ -26,28 +28,31 @@ export default function CrearActivoForm({ onSuccess }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLogin) return; // Protección extra
+
     setLoading(true);
     setMensaje(null);
 
     try {
       await crearActivo(form);
-      setMensaje({ tipo: 'success', texto: 'Activo guardado correctamente' });
+      setMensaje({ tipo: 'success', texto: '¡Activo guardado correctamente!' });
       setForm({ plataforma: '', usuarioCuenta: '', password: '', notas: '', categoria: 'OTRO' });
-      
       if (onSuccess) onSuccess();
-
     } catch (error) {
       console.error(error);
-      setMensaje({ tipo: 'error', texto: 'Error al guardar. Revisa el backend.' });
+      setMensaje({ tipo: 'error', texto: 'Error al guardar. ¿Estás logueado?' });
     } finally {
       setLoading(false);
     }
   };
 
+  // Si no está logueado, ocultamos el formulario o mostramos aviso
+  if (!isLogin) return null;
+
   return (
     <div className="w-full bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
       <h2 className="text-2xl font-bold mb-4 text-center text-blue-600">Nuevo Activo</h2>
-      
+      {/* ... (Resto del formulario igual, no cambia nada abajo) ... */}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
