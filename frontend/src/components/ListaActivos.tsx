@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function ListaActivos({ refreshTrigger }: Props) {
-  const { isLogin, token } = useAuth(); // <--- USAR EL HOOK
+  const { isLogin, token, roles } = useAuth(); // <--- USAR EL HOOK
   const [activos, setActivos] = useState<ActivoDigital[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -47,11 +47,11 @@ export default function ListaActivos({ refreshTrigger }: Props) {
     }
   };
 
-  // Renderizado condicional
-  if (!isLogin) {
+  // Renderizado condicional: solo titular puede ver activos
+  if (!isLogin || !(roles || []).includes('usuario_titular')) {
     return (
       <div className="w-full max-w-5xl mt-8 text-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-        <p className="text-gray-500 text-lg">🔒 Inicia sesión para ver tu Bóveda Segura.</p>
+        <p className="text-gray-500 text-lg">🔒 Acceso restringido: necesitas el rol de titulado para ver esta bóveda.</p>
       </div>
     );
   }

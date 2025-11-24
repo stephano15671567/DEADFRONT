@@ -7,6 +7,7 @@ interface AuthContextType {
   isLogin: boolean;
   token: string | undefined;
   username: string | undefined;
+  roles?: string[];
   login: () => void;
   logout: () => void;
   register: () => void;
@@ -18,6 +19,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
   const [isLogin, setIsLogin] = useState(false);
   const [token, setToken] = useState<string | undefined>(undefined);
   const [username, setUsername] = useState<string | undefined>(undefined);
+  const [roles, setRoles] = useState<string[] | undefined>(undefined);
   const isRun = useRef(false);
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
         if (authenticated) {
           setToken(keycloak.token);
           setUsername(keycloak.tokenParsed?.preferred_username);
+          const realmRoles = (keycloak.tokenParsed as any)?.realm_access?.roles || [];
+          setRoles(realmRoles);
           
           // Guardamos el token en localStorage para casos extremos, 
           // aunque lo ideal es consumirlo del contexto o memoria.
@@ -44,6 +48,24 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
             localStorage.setItem('kc_token', keycloak.token);
           }
         }
+      
+        // Intentar refrescar token automáticamente cada cierto tiempo
+        // keycloak.updateToken(minValidity) devuelve true si se actualizó
+        const refreshInterval = setInterval(() => {
+          keycloak.updateToken(30).then((refreshed) => {
+            if (refreshed) {
+              setToken(keycloak.token);
+              setRoles((keycloak.tokenParsed as any)?.realm_access?.roles || []);
+              if (keycloak.token) localStorage.setItem('kc_token', keycloak.token);
+            }
+          }).catch((err) => {
+            // No interrumpimos la app por errores de refresh, pero lo registramos
+            console.warn('Keycloak token refresh failed:', err);
+          });
+        }, 20 * 1000); // chequeo cada 20s (suficiente para dev)
+
+        // Limpiar interval al desmontar
+        return () => clearInterval(refreshInterval);
       } catch (error) {
         console.error('Error inicializando Keycloak:', error);
       }
@@ -60,7 +82,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
   const register = () => keycloak.register();
 
   return (
-    <AuthContext.Provider value={{ isLogin, token, username, login, logout, register }}>
+    <AuthContext.Provider value={{ isLogin, token, username, roles, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

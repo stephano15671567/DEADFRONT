@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function CrearActivoForm({ onSuccess }: Props) {
-  const { isLogin } = useAuth(); // <--- Verificar estado
+  const { isLogin, roles } = useAuth(); // <--- Verificar estado y roles
   const [form, setForm] = useState<AgregarActivoDto>({
     plataforma: '',
     usuarioCuenta: '',
@@ -46,8 +46,8 @@ export default function CrearActivoForm({ onSuccess }: Props) {
     }
   };
 
-  // Si no está logueado, ocultamos el formulario o mostramos aviso
-  if (!isLogin) return null;
+  // Si no está logueado o no tiene rol de titular, ocultamos el formulario
+  if (!isLogin || !(roles || []).includes('usuario_titular')) return null;
 
   return (
     <div className="w-full bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">

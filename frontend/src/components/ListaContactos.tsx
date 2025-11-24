@@ -6,7 +6,7 @@ import { ContactoDto } from '@/types/contacto.types';
 import { useAuth } from '@/providers/KeycloakProvider';
 
 export default function ListaContactos() {
-  const { isLogin, token } = useAuth();
+  const { isLogin, token, roles } = useAuth();
   const [contactos, setContactos] = useState<ContactoDto[]>([]);
   const [form, setForm] = useState({ nombre: '', email: '', telefono: '' });
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,8 @@ export default function ListaContactos() {
     cargar();
   };
 
-  if (!isLogin) return null;
+  // Solo el titular puede gestionar contactos
+  if (!isLogin || !(roles || []).includes('usuario_titular')) return null;
 
   const maxAlcanzado = contactos.length >= 5;
 
