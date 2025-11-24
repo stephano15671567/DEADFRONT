@@ -21,6 +21,7 @@ export default function CrearActivoForm({ onSuccess }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -77,7 +78,25 @@ export default function CrearActivoForm({ onSuccess }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input name="password" type="password" required className="mt-1 block w-full p-2 border border-gray-300 rounded text-black" value={form.password} onChange={handleChange} />
+            <div className="mt-1 relative">
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                aria-label="Contraseña del activo"
+                className="block w-full p-2 pr-12 border border-gray-300 rounded text-black"
+                value={form.password}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-600 bg-white p-1 rounded"
+                aria-pressed={showPassword}
+              >
+                {showPassword ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
           </div>
         </div>
 

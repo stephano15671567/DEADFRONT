@@ -13,6 +13,9 @@ export default function ListaActivos({ refreshTrigger }: Props) {
   const { isLogin, token, roles } = useAuth(); // <--- USAR EL HOOK
   const [activos, setActivos] = useState<ActivoDigital[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState('');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
   const cargarDatos = async () => {
     if (!isLogin || !token) return; // SI NO HAY LOGIN, NO HACER NADA
@@ -21,6 +24,7 @@ export default function ListaActivos({ refreshTrigger }: Props) {
     try {
       const data = await obtenerActivos();
       setActivos(data);
+      setLastUpdated(new Date().toLocaleString());
     } catch (error) {
       console.error("Error cargando activos", error);
     } finally {
@@ -61,9 +65,26 @@ export default function ListaActivos({ refreshTrigger }: Props) {
 
   return (
     <div className="w-full max-w-5xl mt-8">
-      <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">📦 Mis Activos Resguardados</h3>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">📦 Mis Activos Resguardados</h3>
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-600">Total: <span className="font-semibold text-gray-800">{activos.length}</span></div>
+          {lastUpdated && <div className="text-xs text-gray-400">Última actualización: {lastUpdated}</div>}
+        </div>
+      </div>
+      <div className="mb-4">
+        <input
+          placeholder="Buscar por plataforma o usuario..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-full md:w-1/2 p-2 border border-gray-200 rounded"
+          aria-label="Buscar activos"
+        />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {activos.map((activo) => (
+        {activos
+          .filter((a) => a.plataforma.toLowerCase().includes(filter.toLowerCase()) || a.usuarioCuenta.toLowerCase().includes(filter.toLowerCase()))
+          .map((activo) => (
           <div key={activo.id.value} className="bg-white p-5 rounded-lg shadow-md border border-gray-100 flex flex-col justify-between hover:shadow-lg transition">
             <div>
               <div className="flex justify-between items-start mb-3">
@@ -73,7 +94,16 @@ export default function ListaActivos({ refreshTrigger }: Props) {
               <div className="space-y-1">
                 <p className="text-sm text-gray-600"><span className="font-semibold">User:</span> {activo.usuarioCuenta}</p>
                 <p className="text-sm text-gray-500 italic truncate">"{activo.notas || "Sin notas"}"</p>
-                <p className="text-xs text-gray-400 mt-2 font-mono bg-gray-50 p-1 rounded">{activo.passwordCifrada.substring(0, 20)}...</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <code className="text-xs text-gray-400 font-mono bg-gray-50 p-1 rounded">{revealed[activo.id.value] ? activo.passwordCifrada : `${activo.passwordCifrada.substring(0, 8)}••••••`}</code>
+                  <button
+                    onClick={() => setRevealed((r) => ({ ...r, [activo.id.value]: !r[activo.id.value] }))}
+                    className="text-xs text-blue-600 hover:underline"
+                    aria-pressed={!!revealed[activo.id.value]}
+                  >
+                    {revealed[activo.id.value] ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
               </div>
             </div>
             <button 
