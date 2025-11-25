@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { KeycloakProvider } from "@/providers/KeycloakProvider"; // <--- Importar Provider
+import DevBanner from '@/components/DevBanner';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         {/* Envolvemos toda la app con el Provider de Seguridad */}
         <KeycloakProvider>
           {children}
+          <DevBanner />
         </KeycloakProvider>
       </body>
     </html>
