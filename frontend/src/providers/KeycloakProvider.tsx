@@ -29,13 +29,44 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
     isRun.current = true;
 
     const initKeycloak = async () => {
-      try {
-        const authenticated = await keycloak.init({
-          onLoad: 'check-sso', // Revisa si ya existe sesión sin forzar login
-          silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html', // Opcional para evitar recargas
-          pkceMethod: 'S256', // Estándar de seguridad moderno
-        });
+      // If Keycloak is not configured in env (dev), provide a lightweight fallback
+      const keycloakUrl = process.env.NEXT_PUBLIC_KEYCLOAK_URL || process.env.NEXT_PUBLIC_KEYCLOAK_ISSUER;
+      if (!keycloakUrl) {
+        // Development fallback: mark user as logged-in according to env/localStorage
+        try {
+          const devUser = window.localStorage.getItem('DEV_USER_ID') || 'dev-user';
+          const devRoles = (window.localStorage.getItem('DEV_USER_ROLES') || 'usuario_titular').split(',').map(r => r.trim());
+          setIsLogin(true);
+          setToken(window.localStorage.getItem('kc_token') || undefined);
+          setUserId(devUser);
+          setRoles(devRoles);
+        } catch (err) {
+          // If localStorage is inaccessible, just continue without breaking the app
+          console.warn('Dev Keycloak fallback could not read localStorage:', err?.message || err);
+        }
+        return;
+      }
 
+      try {
+        // Prepare init options. Avoid login iframe checks by default to prevent
+        // "Error while checking login iframe" when the redirect HTML is not present.
+        const opts: any = {
+          onLoad: 'check-sso',
+          pkceMethod: 'S256',
+          checkLoginIframe: false, // disable iframe polling to avoid the console error when not needed
+        };
+
+        // Only set silentCheckSsoRedirectUri if the helper file exists on the server
+        try {
+          const resp = await fetch(window.location.origin + '/silent-check-sso.html', { method: 'HEAD' });
+          if (resp && resp.ok) {
+            opts.silentCheckSsoRedirectUri = window.location.origin + '/silent-check-sso.html';
+          }
+        } catch (err) {
+          // ignore — file not present
+        }
+
+        const authenticated = await keycloak.init(opts);
         setIsLogin(authenticated);
 
         if (authenticated) {
@@ -45,33 +76,28 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
           const realmRoles = (keycloak.tokenParsed as any)?.realm_access?.roles || [];
           setRoles(realmRoles);
 
-          // Guardamos el token en localStorage para casos extremos, 
-          // aunque lo ideal es consumirlo del contexto o memoria.
           if (keycloak.token) {
-            localStorage.setItem('kc_token', keycloak.token);
+            try { localStorage.setItem('kc_token', keycloak.token); } catch (err) { /* ignore */ }
           }
         }
-      
-        // Intentar refrescar token automáticamente cada cierto tiempo
-        // keycloak.updateToken(minValidity) devuelve true si se actualizó
+
         const refreshInterval = setInterval(() => {
-          keycloak.updateToken(30).then((refreshed) => {
+          keycloak.updateToken(30).then((refreshed: boolean) => {
             if (refreshed) {
               setToken(keycloak.token);
               setUserId((keycloak.tokenParsed as any)?.sub);
               setRoles((keycloak.tokenParsed as any)?.realm_access?.roles || []);
-              if (keycloak.token) localStorage.setItem('kc_token', keycloak.token);
+              try { if (keycloak.token) localStorage.setItem('kc_token', keycloak.token); } catch (err) { /* ignore */ }
             }
-          }).catch((err) => {
-            // No interrumpimos la app por errores de refresh, pero lo registramos
+          }).catch((err: any) => {
             console.warn('Keycloak token refresh failed:', err);
           });
-        }, 20 * 1000); // chequeo cada 20s (suficiente para dev)
+        }, 20 * 1000);
 
-        // Limpiar interval al desmontar
         return () => clearInterval(refreshInterval);
       } catch (error) {
-        console.error('Error inicializando Keycloak:', error);
+        // Avoid noisy console errors when Keycloak is unreachable; log a friendly message
+        console.warn('Keycloak initialization failed (continuing without SSO):', error?.message || error);
       }
     };
 
