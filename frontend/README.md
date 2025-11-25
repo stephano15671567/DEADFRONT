@@ -19,6 +19,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Environment
 - `NEXT_PUBLIC_API_URL` — URL base of the backend API (example: `http://localhost:3002/api`). If not set defaults to `http://localhost:3002/api` used in development here.
 
+Quick start (recommended)
+1. Copy `.env.local.example` to `.env.local` in this `frontend` folder and set `NEXT_PUBLIC_API_URL` if needed.
+2. Start the backend (see `DeadApp/.env.example`) so the frontend can reach the API.
+
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
