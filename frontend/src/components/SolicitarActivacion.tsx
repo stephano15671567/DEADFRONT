@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { solicitarActivacion } from '@/services/activacionService';
 import { useAuth } from '@/providers/KeycloakProvider';
 
 export default function SolicitarActivacion() {
   const { isLogin, roles } = useAuth();
+  const { userId } = useAuth();
   const [form, setForm] = useState({ usuarioId: '', contactoId: '', nota: '' });
+  useEffect(() => {
+    if (userId) setForm((f) => ({ ...f, contactoId: userId }));
+  }, [userId]);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);
 
@@ -54,7 +58,17 @@ export default function SolicitarActivacion() {
 
         <div>
           <label className="block text-sm text-gray-700">Tu ID de contacto (contactoId)</label>
-          <input name="contactoId" value={form.contactoId} onChange={handleChange} required className="mt-1 w-full p-2 border rounded" />
+          <div className="mt-1 flex items-center gap-2">
+            <input name="contactoId" value={form.contactoId} onChange={handleChange} required className="w-full p-2 border rounded" />
+            <button
+              type="button"
+              onClick={() => {
+                if (form.contactoId) navigator.clipboard.writeText(form.contactoId).then(() => alert('ID copiado')); 
+              }}
+              className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+            >Copiar</button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Tu contactoId se autocompleta si están logueado como contacto.</p>
         </div>
 
         <div>

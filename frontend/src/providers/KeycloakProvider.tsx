@@ -7,6 +7,7 @@ interface AuthContextType {
   isLogin: boolean;
   token: string | undefined;
   username: string | undefined;
+  userId?: string | undefined;
   roles?: string[];
   login: () => void;
   logout: () => void;
@@ -19,6 +20,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
   const [isLogin, setIsLogin] = useState(false);
   const [token, setToken] = useState<string | undefined>(undefined);
   const [username, setUsername] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
   const [roles, setRoles] = useState<string[] | undefined>(undefined);
   const isRun = useRef(false);
 
@@ -39,9 +41,10 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
         if (authenticated) {
           setToken(keycloak.token);
           setUsername(keycloak.tokenParsed?.preferred_username);
+          setUserId((keycloak.tokenParsed as any)?.sub);
           const realmRoles = (keycloak.tokenParsed as any)?.realm_access?.roles || [];
           setRoles(realmRoles);
-          
+
           // Guardamos el token en localStorage para casos extremos, 
           // aunque lo ideal es consumirlo del contexto o memoria.
           if (keycloak.token) {
@@ -55,6 +58,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
           keycloak.updateToken(30).then((refreshed) => {
             if (refreshed) {
               setToken(keycloak.token);
+              setUserId((keycloak.tokenParsed as any)?.sub);
               setRoles((keycloak.tokenParsed as any)?.realm_access?.roles || []);
               if (keycloak.token) localStorage.setItem('kc_token', keycloak.token);
             }
@@ -82,7 +86,7 @@ export const KeycloakProvider = ({ children }: { children: React.ReactNode }) =>
   const register = () => keycloak.register();
 
   return (
-    <AuthContext.Provider value={{ isLogin, token, username, roles, login, logout, register }}>
+    <AuthContext.Provider value={{ isLogin, token, username, userId, roles, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
