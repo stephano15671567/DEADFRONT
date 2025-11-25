@@ -16,6 +16,7 @@ export default function ListaActivos({ refreshTrigger }: Props) {
   const [filter, setFilter] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [copyStatus, setCopyStatus] = useState<Record<string, boolean>>({});
 
   const cargarDatos = async () => {
     if (!isLogin || !token) return; // SI NO HAY LOGIN, NO HACER NADA
@@ -95,14 +96,31 @@ export default function ListaActivos({ refreshTrigger }: Props) {
                 <p className="text-sm text-gray-600"><span className="font-semibold">User:</span> {activo.usuarioCuenta}</p>
                 <p className="text-sm text-gray-500 italic truncate">"{activo.notas || "Sin notas"}"</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <code className="text-xs text-gray-400 font-mono bg-gray-50 p-1 rounded">{revealed[activo.id.value] ? activo.passwordCifrada : `${activo.passwordCifrada.substring(0, 8)}••••••`}</code>
-                  <button
-                    onClick={() => setRevealed((r) => ({ ...r, [activo.id.value]: !r[activo.id.value] }))}
-                    className="text-xs text-blue-600 hover:underline"
-                    aria-pressed={!!revealed[activo.id.value]}
-                  >
-                    {revealed[activo.id.value] ? 'Ocultar' : 'Mostrar'}
-                  </button>
+                  <code className="text-xs text-gray-400 font-mono bg-gray-50 p-1 rounded break-words">{revealed[activo.id.value] ? activo.passwordCifrada : `${activo.passwordCifrada.substring(0, 8)}••••••`}</code>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setRevealed((r) => ({ ...r, [activo.id.value]: !r[activo.id.value] }))}
+                      className="text-xs text-blue-600 hover:underline"
+                      aria-pressed={!!revealed[activo.id.value]}
+                    >
+                      {revealed[activo.id.value] ? 'Ocultar' : 'Mostrar'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(revealed[activo.id.value] ? activo.passwordCifrada : activo.passwordCifrada);
+                          setCopyStatus((s) => ({ ...s, [activo.id.value]: true }));
+                          setTimeout(() => setCopyStatus((s) => ({ ...s, [activo.id.value]: false })), 1500);
+                        } catch (err) {
+                          console.error('No se pudo copiar', err);
+                          alert('No se pudo copiar al portapapeles');
+                        }
+                      }}
+                      className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-gray-700"
+                    >
+                      {copyStatus[activo.id.value] ? 'Copiado' : 'Copiar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

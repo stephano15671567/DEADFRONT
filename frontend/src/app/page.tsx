@@ -6,6 +6,8 @@ import ListaActivos from '@/components/ListaActivos';
 import BarraUsuario from '@/components/BarraUsuario';
 import PanelVida from '@/components/PanelVida';
 import ListaContactos from '@/components/ListaContactos'; // <--- IMPORTANTE
+import Dashboard from '@/components/Dashboard';
+import SolicitarActivacion from '@/components/SolicitarActivacion';
 
 export default function Home() {
   const [refreshCount, setRefreshCount] = useState(0);
@@ -41,6 +43,7 @@ export default function Home() {
           
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             <div className="w-full lg:w-1/3">
+              <Dashboard refreshTrigger={refreshCount} />
               <CrearActivoForm onSuccess={handleSuccess} />
             </div>
             <div className="w-full lg:w-2/3">
@@ -61,6 +64,7 @@ export default function Home() {
           </p>
           
           <ListaContactos />
+            <SolicitarActivacion />
         </div>
 
       </div>

@@ -110,7 +110,7 @@ export default function CrearActivoForm({ onSuccess }: Props) {
         </button>
 
         {mensaje && (
-          <div className={`p-2 text-center rounded text-sm ${mensaje.tipo === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div role="status" aria-live="polite" className={`p-2 text-center rounded text-sm ${mensaje.tipo === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             {mensaje.texto}
           </div>
         )}
