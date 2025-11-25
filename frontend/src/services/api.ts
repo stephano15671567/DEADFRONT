@@ -29,6 +29,23 @@ api.interceptors.request.use((config) => {
     console.warn('Could not read localStorage for auth token:', err?.message || err);
   }
 
+  // In development, if there is no Authorization header, inject dev user headers
+  try {
+    const isDev = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_NODE_ENV === 'development';
+    const hasAuth = !!config.headers?.Authorization;
+    if (isDev && !hasAuth && typeof window !== 'undefined') {
+      const devUser = process.env.NEXT_PUBLIC_DEV_USER_ID || window.localStorage.getItem('DEV_USER_ID') || 'dev-user-1';
+      const devRoles = process.env.NEXT_PUBLIC_DEV_USER_ROLES || window.localStorage.getItem('DEV_USER_ROLES') || 'usuario_titular';
+      config.headers = {
+        ...config.headers,
+        'x-dev-user': devUser,
+        'x-dev-roles': devRoles,
+      };
+    }
+  } catch (err) {
+    // ignore header injection errors in very locked down environments
+  }
+
   return config;
 }, (error) => {
   return Promise.reject(error);
