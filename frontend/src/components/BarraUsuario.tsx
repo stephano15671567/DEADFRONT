@@ -3,7 +3,22 @@
 import { useAuth } from '@/providers/KeycloakProvider';
 
 export default function BarraUsuario() {
-  const { isLogin, username, login, logout, roles } = useAuth();
+  // useAuth throws if used outside provider; guard to avoid runtime crash
+  let auth: any;
+  try {
+    auth = useAuth();
+  } catch (err) {
+    // Provide a safe fallback so the UI can render in stories/tests or when provider is missing
+    auth = {
+      isLogin: false,
+      username: undefined,
+      login: () => undefined,
+      logout: () => undefined,
+      roles: [],
+    };
+  }
+
+  const { isLogin, username, login, logout, roles } = auth;
 
   return (
     <div className="absolute top-4 right-4 flex items-center gap-4">
